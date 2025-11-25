@@ -22,7 +22,7 @@ Das Ziel des Spiels ist es, Hindernissen und Gegnern auszuweichen oder über sie
 Dieses Projekt wurde erstellt mit:
 
 - **HTML Canvas**
-- **CSS / Tailwind (optional)**
+- **CSS**
 - **JavaScript**
 - Game Loop Logik (Physics, Movement, Sprite Handling)
 
