@@ -2,7 +2,7 @@
  * Background music audio element.
  * @type {HTMLAudioElement}
  */
-backgroundMusic = new Audio("./audio/background_music.mp3");
+const backgroundMusic = new Audio("./audio/background_music.mp3");
 
 /**
  * Class representing the game world.
@@ -44,6 +44,12 @@ class World {
    * @type {HTMLAudioElement}
    */
   bottleSound = new Audio("./audio/bottle-shatter.mp3");
+
+  /**
+   * Sound effect for collecting a coin.
+   * @type {HTMLAudioElement}
+   */
+  coinSound = new Audio("./audio/collect-coin.mp3");
 
   /**
    * Keyboard input handler.
@@ -126,35 +132,7 @@ class World {
    */
   constructor(canvas, keyboard) {
     this.checkWinningScreen();
-    this.level = new Level(
-      [
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Skull(),
-        new Endboss(),
-      ],
-      [new Cloud(), new Cloud(), new Cloud(), new Cloud()],
-      [
-        new BackgroundObject("img/background/PNG/3_game_background/layers/1.png", -719, 1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/1.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/2.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/3.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/4.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/5.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/6.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/7.png", 0, 0.1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/8.png", 0, 1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/8.png", -719, 1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/8.png", 720, 1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/8.png", 720 * 2, 1),
-        new BackgroundObject("img/background/PNG/3_game_background/layers/8.png", 720 * 3, 1),
-      ]
-    );
+    this.level = createLevel1();
     this.ctx = canvas.getContext("2d");
     this.canvas = canvas;
     this.keyboard = keyboard;
@@ -164,7 +142,6 @@ class World {
     this.addCollectibleBottleToMap();
     this.addCollectibleCoinToMap();
     this.pushAllSounds();
-    loaded = true;
   }
 
   /**
@@ -173,15 +150,18 @@ class World {
   pushAllSounds() {
     allSounds.push(backgroundMusic);
     allSounds.push(this.bottleSound);
+    allSounds.push(this.coinSound);
   }
 
   /**
    * Plays the background music if not muted.
    */
   playBackgroundMusic() {
-    backgroundMusic.play();
     backgroundMusic.volume = 0.1;
     backgroundMusic.loop = true;
+    if (backgroundMusic.paused) {
+      backgroundMusic.play();
+    }
   }
 
   /**
@@ -199,31 +179,42 @@ class World {
    * Starts the game loop and various intervals for game mechanics.
    */
   run() {
-    setInterval(() => {
+    registerGameInterval(() => {
       if (!allSoundsMute) {
         this.playBackgroundMusic();
       }
     }, 500);
 
-    setInterval(() => {
+    registerGameInterval(() => {
       this.checkCollisions();
     }, 50);
 
-    setInterval(() => {
+    registerGameInterval(() => {
       this.checkThrowObjects();
     }, 150);
 
-    setInterval(() => {
+    registerGameInterval(() => {
       this.checkItemCollection();
     }, 50);
 
-    setInterval(() => {
+    registerGameInterval(() => {
       this.throwHitsSomething();
     }, 30);
 
-    setInterval(() => {
+    registerGameInterval(() => {
       this.checkExplosions();
     }, 30);
+  }
+
+  /**
+   * Restarts the visual loop after the game has been paused.
+   * Interval-based gameplay systems keep running through the global pause gate.
+   */
+  resumeGame() {
+    this.draw();
+    if (!allSoundsMute) {
+      this.playBackgroundMusic();
+    }
   }
 
   /**
@@ -235,7 +226,7 @@ class World {
       if (this.canThrow) {
         this.throwObject();
         this.canThrow = false;
-        setTimeout(() => {
+        registerGameTimeout(() => {
           this.canThrow = true;
         }, 500);
       }
@@ -246,9 +237,9 @@ class World {
    * Creates a new throwable object and adds it to the game.
    */
   throwObject() {
-    if (this.character.thorws > 0) {
-      this.character.thorws -= 10;
-      this.bottleBar.setPercentage(this.character.thorws);
+    if (this.character.throws > 0) {
+      this.character.throws -= 10;
+      this.bottleBar.setPercentage(this.character.throws);
       let throwbottle = new ThrowableObject(this.character.x + 100, this.character.y);
       this.throwableObject.push(throwbottle);
     }
@@ -259,9 +250,6 @@ class World {
    */
   checkExplosions() {
     this.explosions.forEach((explosion, i) => {
-      if (!allSoundsMute) {
-        this.bottleSound.play();
-      }
       if (explosion.done == true) {
         this.explosions.splice(i, 1);
       }
@@ -285,9 +273,12 @@ class World {
    * @param {ThrowableObject} throwable - The throwable object that has exploded.
    */
   objectExplodes(throwable) {
-    let explosion = new Explosion(throwable.x - 130, throwable.y - 150);
+    const explosion = new Explosion(throwable.x - 130, throwable.y - 150);
     this.explosions.push(explosion);
-    this.addObjectsToMap(this.explosions);
+    if (!allSoundsMute) {
+      this.bottleSound.currentTime = 0;
+      this.bottleSound.play();
+    }
   }
 
   /**
@@ -302,12 +293,12 @@ class World {
    * Checks if the character has collected any bottles.
    */
   checkBottles() {
-    this.bottleBar.setPercentage(this.character.thorws);
+    this.bottleBar.setPercentage(this.character.throws);
     this.collectibleBottles.some((bottle, index) => {
       if (this.collectItem(bottle)) {
         this.collectibleBottles.splice(index, 1);
-        if (this.character.thorws < 100) {
-          this.character.thorws += 10;
+        if (this.character.throws < 100) {
+          this.character.throws += 10;
         }
       }
     });
@@ -317,14 +308,14 @@ class World {
    * Checks if the character has collected any coins.
    */
   checkCoins() {
-    let collectCoinSound = new Audio("./audio/collect-coin.mp3");
     this.coinBar.setPercentage(this.character.coins);
     this.allCoins.some((coin, index) => {
       if (this.collectItem(coin)) {
         this.allCoins.splice(index, 1);
         this.character.coins += 20;
         if (!allSoundsMute) {
-          collectCoinSound.play();
+          this.coinSound.currentTime = 0;
+          this.coinSound.play();
         }
         this.coinBar.setPercentage(this.character.coins);
       }
@@ -337,10 +328,13 @@ class World {
   checkCollisions() {
     this.level.enemies.forEach((enemy, index) => {
       this.throwHit(enemy);
-      if (enemy.isDead == true) {
+      if (enemy.isDead) {
         this.level.enemies.splice(index, 1);
+        return;
       }
-      this.playerJumpedOnEnemie(enemy);
+      if (this.playerJumpedOnEnemie(enemy)) {
+        return;
+      }
       this.playerCollidingWithEnemie(enemy);
     });
   }
@@ -419,7 +413,7 @@ class World {
    */
   endbossDead(enemy) {
     if (enemy instanceof Endboss) {
-      setTimeout(() => {
+      registerGameTimeout(() => {
         stopAllIntervals();
         this.winningscreen();
       }, 2000);
@@ -470,6 +464,10 @@ class World {
    * Main draw function that updates the canvas each frame.
    */
   draw() {
+    if (gameIsPaused) {
+      return;
+    }
+
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.parallaxEffect();
     this.ctx.translate(this.camera_x, 0);
@@ -477,9 +475,8 @@ class World {
     this.ctx.translate(-this.camera_x, 0);
     this.runWithCamera();
 
-    let self = this;
-    requestAnimationFrame(() => {
-      self.draw();
+    registerGameAnimationFrame(() => {
+      this.draw();
     });
   }
 
@@ -512,7 +509,9 @@ class World {
   characterDeadGameOver() {
     if (this.character.energy <= 0) {
       this.addToMap(this.gameOver);
-      this.gameOver.init();
+      if (this.gameOver.width === 0) {
+        this.gameOver.init();
+      }
     }
   }
 

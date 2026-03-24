@@ -50,7 +50,7 @@ class MoveableObject extends DrawableObject {
    * The number of throwable items (e.g., molotovs) the object has.
    * @type {number}
    */
-  thorws = 100;
+  throws = 100;
 
   /**
    * The number of coins the object has collected.
@@ -70,7 +70,7 @@ class MoveableObject extends DrawableObject {
    */
   playSoundIfNotMuted(sound) {
     if (!allSoundsMute) {
-      if (sound && typeof sound.play === "function") {
+      if (sound && typeof sound.play === "function" && sound.paused) {
         sound.play();
       }
     }
@@ -84,8 +84,6 @@ class MoveableObject extends DrawableObject {
       if (this.isAboveGround() || this.speedY > 0) {
         this.y -= this.speedY;
         this.speedY -= this.acceleration;
-      } else if (this.isAboveGround()) {
-        this.speedY = 0;
       }
     }, 1000 / 25);
   }
@@ -104,42 +102,16 @@ class MoveableObject extends DrawableObject {
   /**
    * Plays an animation by cycling through an array of images.
    * @param {string[]} images - Array of image paths.
-   * @param {boolean} [loop=false] - Whether the animation should loop.
+   * @param {boolean} [once=false] - If true, plays through once and stops at the last frame.
    */
-  playAnimation(images, loop = false) {
-    if (loop == false) {
-      let i = this.currentImage % images.length;
-      let path = images[i];
-      this.img = this.imageCache[path];
-      this.currentImage++;
-    } else if (loop == true) {
+  playAnimation(images, once = false) {
+    if (once) {
       if (this.currentImage < images.length) {
-        let path = images[this.currentImage];
-        this.img = this.imageCache[path];
+        this.img = this.imageCache[images[this.currentImage]];
         this.currentImage++;
-      } else {
-        this.currentImage = 0; // Optional reset to restart the loop
       }
-    }
-  }
-
-  /**
-   * Plays an animation once without looping.
-   * @param {string[]} images - Array of image paths.
-   * @param {boolean} [loop=false] - Whether to loop the animation.
-   */
-  playAnimationOnce(images, loop = false) {
-    if (loop) {
-      let i = this.currentImage % images.length;
-      let path = images[i];
-      this.img = this.imageCache[path];
-      this.currentImage++;
     } else {
-      if (this.currentImage < images.length) {
-        let path = images[this.currentImage];
-        this.img = this.imageCache[path];
-        this.currentImage++;
-      }
+      super.playAnimation(images);
     }
   }
 
@@ -150,29 +122,9 @@ class MoveableObject extends DrawableObject {
    * @returns {number} The interval ID.
    */
   intervalHelper(fn, time) {
-    let id = setInterval(() => {
-      fn();
-    }, time);
+    const id = registerGameInterval(fn, time);
     this.intervalIds.push(id);
     return id;
-  }
-
-  /**
-   * Pushes all interval IDs for this object to the global game intervals array.
-   */
-  pushIntervalIds() {
-    this.intervalIds.forEach((id) => {
-      window.gameIntervalIds.push(id);
-    });
-  }
-
-  /**
-   * Stops all intervals associated with this object.
-   */
-  stopInterval() {
-    this.intervalIds.forEach((id) => {
-      clearInterval(id);
-    });
   }
 
   /**
@@ -227,12 +179,6 @@ class MoveableObject extends DrawableObject {
    */
   hit() {
     this.energy -= 5;
-    if (!allSoundsMute) {
-      if (this.energy > 5) {
-        let hit_sound = new Audio("./audio/hit.mp3");
-        hit_sound.play();
-      }
-    }
     if (this.energy < 0) {
       this.energy = 0;
     } else {
@@ -241,10 +187,10 @@ class MoveableObject extends DrawableObject {
   }
 
   /**
-   * Checks if the object is dead.
+   * Checks if the object is out of health.
    * @returns {boolean} True if the object has no energy left.
    */
-  isDead() {
+  isOutOfHealth() {
     return this.energy == 0;
   }
 
@@ -265,7 +211,7 @@ class MoveableObject extends DrawableObject {
   skullIsDying() {
     let speed = this.setDyingSpeed();
     this.currentImage = 0;
-    let interval = setInterval(() => {
+    const interval = registerGameInterval(() => {
       clearInterval(this.moveId);
       this.playAnimation(this.IMAGES_DYING, true);
       this.updateSkullSize();

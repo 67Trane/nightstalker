@@ -84,7 +84,7 @@ class GameOver extends MoveableObject {
     init() {
       this.width = 400;
       this.height = 100;
-      this.playAnimationOnce(this.GAME_OVER_IMGS);
+      this.playAnimation(this.GAME_OVER_IMGS, true);
     }
   
     /**

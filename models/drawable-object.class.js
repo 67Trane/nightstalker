@@ -61,10 +61,7 @@ class DrawableObject {
   draw(ctx) { 
     try {
       ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
-    } catch (error) {
-      console.warn(error);
-      console.log("This image makes Trouble: ", this.img.src);
-    }
+    } catch (_) {}
   }
 
   /**
@@ -84,6 +81,16 @@ class DrawableObject {
         }
       };
     });
+  }
+
+  /**
+   * Plays an animation by cycling through an array of images.
+   * @param {string[]} images - Array of image paths.
+   */
+  playAnimation(images) {
+    const i = this.currentImage % images.length;
+    this.img = this.imageCache[images[i]];
+    this.currentImage++;
   }
 
   /**

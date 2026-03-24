@@ -1,12 +1,13 @@
 let canvas;
 let world;
 let keyboard = new Keyboard();
+let loadingScreenIntervalId = null;
 
 /**
  * Initializes the game by checking if the start button has been pressed and starting the game.
  */
 function init() {
-  isOnMobile()
+  isOnMobile();
   let checkStart = setInterval(() => {
     if (gameStart) {
       loadingScreen();
@@ -28,15 +29,16 @@ function startButton() {
  * Displays the loading screen and starts loading the game.
  */
 function loadingScreen() {
-  loadingScreenDiv = document.getElementById("loading-screen");
-  loadingScreenImg = document.getElementById("loading-screen-img");
+  const loadingScreenDiv = document.getElementById("loading-screen");
+  const loadingScreenImg = document.getElementById("loading-screen-img");
   loadingScreenDiv.classList.remove("d-none");
-  count = 0;
-  amountOfPics = 26;
-  intervalId = setInterval(() => {
-    loadLoadingScreen();
+  let count = 0;
+  const amountOfPics = 26;
+
+  loadingScreenIntervalId = setInterval(() => {
+    count = loadLoadingScreen(loadingScreenImg, count, amountOfPics);
     if (loaded) {
-      removeLoadingScreen();
+      removeLoadingScreen(loadingScreenDiv);
     }
   }, 60);
 }
@@ -44,19 +46,24 @@ function loadingScreen() {
 /**
  * Updates the loading screen with the next image in the sequence.
  */
-function loadLoadingScreen() {
-  i = (count % amountOfPics) + 1;
-  formatedNumber = smallerThenTen(i);
+function loadLoadingScreen(loadingScreenImg, count, amountOfPics) {
+  const i = (count % amountOfPics) + 1;
+  const formatedNumber = smallerThenTen(i);
   loadingScreenImg.src = `./img/text-animation/PNG/LoadGame/LoadGame_${formatedNumber}.png`;
-  count++;
+  return count + 1;
 }
 
 /**
  * Removes the loading screen after the game has loaded.
  */
-function removeLoadingScreen() {
+function removeLoadingScreen(loadingScreenDiv) {
   loadingScreenDiv.classList.add("d-none");
-  clearInterval(intervalId);
+  clearInterval(loadingScreenIntervalId);
+  loadingScreenIntervalId = null;
+  gameIsPaused = false;
+  if (world) {
+    world.resumeGame();
+  }
 }
 
 /**
@@ -72,14 +79,30 @@ function smallerThenTen(number) {
  * Starts the game by initializing the world and attaching it to the canvas.
  */
 function startGame() {
+  stopAllIntervals();
+  resetAssetLoadingState();
+  resetKeyboardState(keyboard);
+  allSounds.forEach((audio) => audio.pause());
+  allSounds = [];
+  gameIsPaused = true;
   canvas = document.getElementById("canvas");
   world = new World(canvas, keyboard);
+}
+
+/**
+ * Pauses gameplay without destroying the active world state.
+ * Registered gameplay intervals stay alive but stop executing until resumed.
+ */
+function pauseGame() {
+  gameIsPaused = true;
+  allSounds.forEach((audio) => audio.pause());
 }
 
 /**
  * Adds event listeners for keydown events to control the character and game.
  */
 document.addEventListener("keydown", (event) => {
+  if (!window.loaded) return;
   if (event.keyCode == 80) {
     unpauseCharacter();
   }
@@ -142,12 +165,11 @@ document.addEventListener("keyup", (event) => {
 });
 
 /**
- * Stops all active intervals to pause the game.
+ * Stops and clears all registered gameplay loops for a full teardown.
  */
 function stopAllIntervals() {
   window.gameIsPaused = true;
-  window.gameIntervalIds.forEach(clearInterval);
-  window.gameIntervalIds = [];
+  clearGameRuntime();
 }
 
 /**
@@ -173,43 +195,18 @@ function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-/**
- * Changes the HUD layout based on whether the device is mobile or not.
- */
-function changeHud() {
-  if (isMobileDevice()) {
-    window.isMobile = true;
-  } else {
-    window.isMobile = false;
-  }
-}
-
-changeHud();
+window.isMobile = isMobileDevice();
 
 /**
- * Closes the info field.
+ * Shows or hides an element by toggling the d-none class.
+ * @param {string} id - The element ID.
+ * @param {boolean} visible - True to show, false to hide.
  */
-function closeInfo() {
-  document.getElementById("info-field-wrapper").classList.add("d-none");
+function setElementVisibility(id, visible) {
+  document.getElementById(id).classList.toggle("d-none", !visible);
 }
 
-/**
- * Closes the impressum field.
- */
-function closeImpressum() {
-  document.getElementById("impressum-field").classList.add("d-none");
-}
-
-/**
- * Opens the info field.
- */
-function openInfo() {
-  document.getElementById("info-field-wrapper").classList.remove("d-none");
-}
-
-/**
- * Opens the impressum field.
- */
-function openImpressum() {
-  document.getElementById("impressum-field").classList.remove("d-none");
-}
+function closeInfo()      { setElementVisibility("info-field-wrapper", false); }
+function openInfo()       { setElementVisibility("info-field-wrapper", true); }
+function closeImpressum() { setElementVisibility("impressum-field", false); }
+function openImpressum()  { setElementVisibility("impressum-field", true); }

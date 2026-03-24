@@ -200,7 +200,6 @@ class Character extends MoveableObject {
     this.loadImages(this.IMAGES_THROW);
     this.applyGravity();
     this.animate();
-    this.pushIntervalIds();
     this.cameraFollow();
     allSounds.push(this.walking_sound);
     allSounds.push(this.jump_sound);
@@ -246,17 +245,17 @@ class Character extends MoveableObject {
    * Determines and plays the appropriate animation based on the character's state.
    */
   playCharacterAnimation() {
-    if (this.isDead()) {
+    if (this.isOutOfHealth()) {
       this.playAnimation(this.IMAGES_ISDEAD, true);
       this.playSoundIfNotMuted(this.dead_sound);
-      setTimeout(() => {
+      registerGameTimeout(() => {
         window.stopAllIntervals();
       }, 400);
     } else if (this.isHurt()) {
       this.playAnimation(this.IMAGES_HURT);
       this.playSoundIfNotMuted(this.hit_sound);
     } else if (this.isAboveGround()) {
-      this.playAnimation(this.IMAGES_JUMPING, true);
+      this.playAnimation(this.IMAGES_JUMPING);
       this.playSoundIfNotMuted(this.jump_sound);
     } else {
       if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
@@ -301,7 +300,7 @@ class Character extends MoveableObject {
    * Updates the camera position to follow the character.
    */
   cameraFollow() {
-    setInterval(() => {
+    registerGameInterval(() => {
       this.world.camera_x = -this.x + 100;
     }, 1000 / 60);
   }

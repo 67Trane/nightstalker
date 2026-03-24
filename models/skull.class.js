@@ -105,7 +105,6 @@ class Skull extends MoveableObject {
    */
   initialize() {
     this.animate();
-    this.pushIntervalIds();
   }
 
   /**

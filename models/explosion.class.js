@@ -61,7 +61,7 @@ class Explosion extends MoveableObject {
     this.loadImages(this.IMAGES_EXPLOSIONS);
     this.x = x;
     this.y = y;
-    this.playAnimationOnce(this.IMAGES_EXPLOSIONS, true);
+    this.playAnimation(this.IMAGES_EXPLOSIONS);
     this.animateOnce();
   }
 
@@ -69,8 +69,8 @@ class Explosion extends MoveableObject {
    * Animates the explosion, playing the animation once and marking it as done when finished.
    */
   animateOnce() {
-    let interval = setInterval(() => {
-      this.playAnimationOnce(this.IMAGES_EXPLOSIONS, true);
+    const interval = registerGameInterval(() => {
+      this.playAnimation(this.IMAGES_EXPLOSIONS);
       if (this.currentImage >= this.IMAGES_EXPLOSIONS.length) {
         clearInterval(interval);
         this.done = true;

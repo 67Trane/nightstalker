@@ -23,12 +23,6 @@ class Cloud extends MoveableObject {
   width = 500;
 
   /**
-   * Array to store interval IDs for managing animations.
-   * @type {number[]}
-   */
-  intervalIds = [];
-
-  /**
    * Creates an instance of Cloud.
    * The cloud's position is randomly initialized on the x-axis.
    */
@@ -36,7 +30,6 @@ class Cloud extends MoveableObject {
     super().loadImage("img/background/PNG/3_game_background/layers/5.png");
     this.x = Math.random() * 2000; // Random x-position for the cloud.
     this.animate();
-    this.pushIntervalIds();
   }
 
   /**

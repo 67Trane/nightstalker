@@ -1,5 +1,3 @@
-keyboard = new Keyboard();
-
 /**
  * Adds touchstart event listeners for mobile controls.
  * Sets keyboard.LEFT to true when the left button is pressed.
@@ -7,6 +5,7 @@ keyboard = new Keyboard();
  */
 document.getElementById("left-btn").addEventListener("touchstart", function (event) {
   event.preventDefault();
+  if (!window.loaded) return;
   keyboard.LEFT = true;
 });
 
@@ -17,6 +16,7 @@ document.getElementById("left-btn").addEventListener("touchstart", function (eve
  */
 document.getElementById("right-btn").addEventListener("touchstart", function (event) {
   event.preventDefault();
+  if (!window.loaded) return;
   keyboard.RIGHT = true;
 });
 
@@ -27,6 +27,7 @@ document.getElementById("right-btn").addEventListener("touchstart", function (ev
  */
 document.getElementById("up-btn").addEventListener("touchstart", function (event) {
   event.preventDefault();
+  if (!window.loaded) return;
   keyboard.SPACE = true;
 });
 
@@ -37,6 +38,7 @@ document.getElementById("up-btn").addEventListener("touchstart", function (event
  */
 document.getElementById("molotov-btn").addEventListener("touchstart", function (event) {
   event.preventDefault();
+  if (!window.loaded) return;
   keyboard.F = true;
 });
 
@@ -85,7 +87,7 @@ document.getElementById("molotov-btn").addEventListener("touchend", function (ev
  * If the device is in landscape mode with larger screen dimensions, hides the mobile controls.
  */
 function isOnMobile() {
-  if (window.innerWidth > window.innerHeight && window.innerHeight > 481 && window.innerHeight > 768) {
+  if (window.innerWidth > window.innerHeight && window.innerHeight > 768) {
     document.getElementById("mobile-movement").classList.add("d-none");
   } else {
     document.getElementById("mobile-movement").classList.remove("d-none");

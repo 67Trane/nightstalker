@@ -128,14 +128,13 @@ class Endboss extends MoveableObject {
    */
   initialize() {
     this.animate();
-    this.pushIntervalIds();
   }
 
   /**
    * Updates the position of the health bar to follow the end boss.
    */
   updateHealthbar() {
-    setInterval(() => {
+    registerGameInterval(() => {
       this.healthbar.x = this.x;
       this.healthbar.y = this.y;
     }, 60);

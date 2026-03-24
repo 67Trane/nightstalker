@@ -57,7 +57,7 @@ function muteAllSounds() {
  * Restarts the game by stopping all intervals and calling the `startGame` function.
  */
 function restartGame() {
-  stopAllIntervals();
+  loadingScreen();
   startGame();
 }
 
@@ -66,14 +66,9 @@ function restartGame() {
  */
 function unpauseCharacter() {
   if (gameIsPaused) {
-    world.character.animate();
-    world.character.applyGravity();
-    world.character.pushIntervalIds();
-    world.level.enemies.forEach((enemie) => {
-      enemie.initialize();
-    });
     gameIsPaused = false;
+    world.resumeGame();
   } else {
-    stopAllIntervals();
+    pauseGame();
   }
 }
