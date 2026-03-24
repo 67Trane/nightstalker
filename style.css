@@ -358,3 +358,7 @@ p {
 a {
   font-family: Arial, sans-serif;
 }
+
+.rotate {
+  transform: rotate(90deg)
+}
